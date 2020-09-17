@@ -4,10 +4,17 @@ class Spatial_Hash {
     constructor(ctx) {
         this.ctx = ctx;
         this.cells = [];
-        this.cells_per_col = 10;
-        this.cells_per_row = 10;
-        this.cell_width = Math.floor(window.innerWidth / this.cells_per_col) + 1;
-        this.cell_height = Math.floor(window.innerHeight / this.cells_per_row) + 1;
+        // this.cells_per_col = 10;
+        // this.cells_per_row = 10;
+        // this.cell_width = Math.floor(window.innerWidth / this.cells_per_col) + 1;
+        // this.cell_height = Math.floor(window.innerHeight / this.cells_per_row) + 1;
+
+        this.cell_size = 20;
+        this.cell_width = this.cell_size;
+        this.cell_height = this.cell_size;
+
+        this.cells_per_col = Math.floor(window.innerWidth / this.cell_size) + 1;
+        this.cells_per_row = Math.floor(window.innerHeight / this.cell_size) + 1;
 
         console.log("cells_per_row: " + this.cells_per_row);
         console.log("cells_per_col: " + this.cells_per_col);

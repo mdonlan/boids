@@ -57,6 +57,10 @@ function draw() {
         // ctx.beginPath();
         // ctx.arc(boids[i].pos.x, boids[i].pos.y, 100, 0, 2 * Math.PI);
         // ctx.fill();
+
+        if (i == 0) {
+            ctx.strokeRect(boids[i].pos.x - spatial_hash.cell_width, boids[i].pos.y - spatial_hash.cell_height, spatial_hash.cell_width * 2, spatial_hash.cell_height * 2);
+        }
     }
 }
 
@@ -97,12 +101,12 @@ function get_alignment(boid) {
     let pos = { x: 0, y: 0 };
     const nearby = spatial_hash.point_to_rect(boid.pos.x, boid.pos.y);
     for (let i = 0; i < nearby.length; i++) {
-        if (dist(boid.pos.x, boid.pos.y, nearby[i].pos.x, nearby[i].pos.y) < 50) {
+        // if (dist(boid.pos.x, boid.pos.y, nearby[i].pos.x, nearby[i].pos.y) < 50) {
             if (boid.id != nearby[i].id) {
                 pos.x += nearby[i].vel.x;
                 pos.y += nearby[i].vel.y;
             }
-        }
+        // }
     }
 
     if (nearby.length == 0) return pos;
@@ -133,16 +137,18 @@ function get_alignment(boid) {
 }
 
 function get_cohesion(boid) {
+
     let count = 0
     let pos = { x: 0, y: 0 };
-    for (let i = 0; i < boids.length; i++) {
-        if (dist(boid.pos.x, boid.pos.y, boids[i].pos.x, boids[i].pos.y) < 50) {
-            if (boid.id != boids[i].id) {
-                pos.x += boids[i].pos.x;
-                pos.y += boids[i].pos.y;
+    const nearby = spatial_hash.point_to_rect(boid.pos.x, boid.pos.y);
+    for (let i = 0; i < nearby.length; i++) {
+        // if (dist(boid.pos.x, boid.pos.y, nearby[i].pos.x, nearby[i].pos.y) < 50) {
+            if (boid.id != nearby[i].id) {
+                pos.x += nearby[i].pos.x;
+                pos.y += nearby[i].pos.y;
                 count++;
             }
-        }
+        // }
     }
 
     if (count == 0) return pos;
@@ -156,6 +162,30 @@ function get_cohesion(boid) {
     pos = normalize(pos)
 
     return pos;
+
+    // let count = 0
+    // let pos = { x: 0, y: 0 };
+    // for (let i = 0; i < boids.length; i++) {
+    //     if (dist(boid.pos.x, boid.pos.y, boids[i].pos.x, boids[i].pos.y) < 50) {
+    //         if (boid.id != boids[i].id) {
+    //             pos.x += boids[i].pos.x;
+    //             pos.y += boids[i].pos.y;
+    //             count++;
+    //         }
+    //     }
+    // }
+
+    // if (count == 0) return pos;
+
+    // pos.x /= count;
+    // pos.y /= count;
+
+    // pos.x -= boid.pos.x;
+    // pos.y -= boid.pos.y;
+
+    // pos = normalize(pos)
+
+    // return pos;
 }
 
 function get_separation(boid) {
@@ -164,12 +194,12 @@ function get_separation(boid) {
     let pos = { x: 0, y: 0 };
     const nearby = spatial_hash.point_to_rect(boid.pos.x, boid.pos.y);
     for (let i = 0; i < nearby.length; i++) {
-        if (dist(boid.pos.x, boid.pos.y, nearby[i].pos.x, nearby[i].pos.y) < 50) {
+        // if (dist(boid.pos.x, boid.pos.y, nearby[i].pos.x, nearby[i].pos.y) < 50) {
             if (boid.id != nearby[i].id) {
                 pos.x += nearby[i].pos.x - boid.pos.x;
                 pos.y += nearby[i].pos.y - boid.pos.y;
             }
-        }
+        // }
     }
 
     if (nearby.length == 0) return pos;
@@ -260,7 +290,7 @@ function reset() {
 
 function init() {
 
-    for (let i = 0; i < 500; i++) {
+    for (let i = 0; i < 1000; i++) {
         boids.push(create_boid());
         spatial_hash.insert(boids[i]);
     }
