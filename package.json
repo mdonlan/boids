@@ -1,0 +1,23 @@
+{
+  "name": "boids",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "webpack serve --mode=development",
+    "build": "webpack --mode=production"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mdonlan/boids/issues"
+  },
+  "homepage": "https://github.com/mdonlan/boids#readme",
+  "dependencies": {
+    "pixi.js": "^6.5.1",
+    "stats.js": "^0.17.0",
+    "webpack": "^5.74.0",
+    "webpack-cli": "^4.10.0",
+    "webpack-dev-server": "^4.10.0"
+  }
+}
