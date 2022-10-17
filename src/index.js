@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 import Stats from 'stats.js';
 import {spatial_grid} from './spatial_hash'
+import { Vec2 } from './Vec2';
 
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
@@ -51,12 +52,12 @@ const min_speed = 2;
 // const min_speed = 2;
 
 const num_boids = 250;
-const sight_radius = 150;
+const sight_radius = 400;
 const avoid_radius = 10;
 const separation_factor = 0.005;
-const cohesion_factor = 0.0005;
+const cohesion_factor = 0.00025;
 const alignment_factor = 0.65;
-const turn_factor = .2;
+// const turn_factor = .2;
 const max_speed = 3;
 const min_speed = 2;
 
@@ -71,13 +72,13 @@ const clients = [];
 function get_random_pos() {
     let x = Math.round(Math.random() * WIDTH);
     let y = Math.round(Math.random() * HEIGHT);
-    return { x: x, y: y };
+    return new Vec2(x, y);
 }
 
 function get_random_vel() {
     let x = Math.round(Math.random() * 6) - 3;
     let y = Math.round(Math.random() * 6) - 3;
-    return { x: x, y: y };
+    return new Vec2(x, y);
 }
 
 function sim() {
@@ -111,6 +112,7 @@ function sim() {
             new_vel.x += (cohesion.x - boids[i].pos.x) * cohesion_factor;
             new_vel.y += (cohesion.y - boids[i].pos.y) * cohesion_factor;
         }
+
         if (separation.x != 0 || separation.y != 0) {
             new_vel.x += separation.x * separation_factor;
             new_vel.y += separation.y * separation_factor;
@@ -181,38 +183,38 @@ function sim() {
         boids[i].sprite.tint = rgb2hex(r, g, b);
 
         // DEV: view radius
-        // if (i == 0) {
-        //     let sight_circle = app.stage.getChildByName("sight_circle");
-        //     let avoid_circle = app.stage.getChildByName("avoid_circle");
+        if (i == 0) {
+            let sight_circle = app.stage.getChildByName("sight_circle");
+            let avoid_circle = app.stage.getChildByName("avoid_circle");
 
-        //     if (sight_circle) {
-        //         sight_circle.clear();
-        //         sight_circle.lineStyle(2, 0xFF00FF);
-        //         sight_circle.drawCircle(boid.pos.x, boid.pos.y, sight_radius);
-        //         sight_circle.endFill();
-        //     } else {
-        //         const sight_circle = new PIXI.Graphics();
-        //         sight_circle.lineStyle(2, 0xFF00FF);
-        //         sight_circle.drawCircle(boid.pos.x, boid.pos.y, sight_radius);
-        //         sight_circle.endFill();
-        //         sight_circle.name = "sight_circle";
-        //         app.stage.addChild(sight_circle);
-        //     }
+            if (sight_circle) {
+                sight_circle.clear();
+                sight_circle.lineStyle(2, 0xFF00FF);
+                sight_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, sight_radius);
+                sight_circle.endFill();
+            } else {
+                const sight_circle = new PIXI.Graphics();
+                sight_circle.lineStyle(2, 0xFF00FF);
+                sight_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, sight_radius);
+                sight_circle.endFill();
+                sight_circle.name = "sight_circle";
+                app.stage.addChild(sight_circle);
+            }
 
-        //     if (avoid_circle) {
-        //         avoid_circle.clear();
-        //         avoid_circle.lineStyle(2, 0xFF00FF);
-        //         avoid_circle.drawCircle(boid.pos.x, boid.pos.y, avoid_radius);
-        //         avoid_circle.endFill();
-        //     } else {
-        //         const avoid_circle = new PIXI.Graphics();
-        //         avoid_circle.lineStyle(2, 0xFF00FF);
-        //         avoid_circle.drawCircle(boid.pos.x, boid.pos.y, avoid_radius);
-        //         avoid_circle.endFill();
-        //         avoid_circle.name = "avoid_circle";
-        //         app.stage.addChild(avoid_circle)
-        //     }
-        // }
+            if (avoid_circle) {
+                avoid_circle.clear();
+                avoid_circle.lineStyle(2, 0xFF00FF);
+                avoid_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, avoid_radius);
+                avoid_circle.endFill();
+            } else {
+                const avoid_circle = new PIXI.Graphics();
+                avoid_circle.lineStyle(2, 0xFF00FF);
+                avoid_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, avoid_radius);
+                avoid_circle.endFill();
+                avoid_circle.name = "avoid_circle";
+                app.stage.addChild(avoid_circle)
+            }
+        }
     }
 }
 
@@ -265,13 +267,36 @@ function get_cohesion(boid, nearby) {
 // move away from nearby boids
 function get_separation(boid, nearby) {
     // return {x: 0, y: 0}
-    const pos = { x: 0, y: 0 };
+    const pos = new Vec2(0, 0);
+    let count = 0;
     for (let i = 0; i < nearby.length; i++) {
             if (boid.id != nearby[i].id && get_dist(boid, boids[nearby[i].id]) < avoid_radius) {
-                pos.x += boid.pos.x - boids[nearby[i].id].pos.x;
-                pos.y += boid.pos.y - boids[nearby[i].id].pos.y;
+                let vec = new Vec2(boid.pos.x, boid.pos.y);
+                
+                let dist = Vec2.distance(boid.pos, boids[nearby[i].id].pos);
+                let diff = Vec2.subtract(boid.pos, boids[nearby[i].id].pos);
+                diff.normalize();
+                diff.divide(dist);
+
+                pos.add(diff);
+                count++;
+
+
+                // pos.x += boid.pos.x - boids[nearby[i].id].pos.x;
+                // pos.y += boid.pos.y - boids[nearby[i].id].pos.y;
             }
     }
+
+    if (count > 0) {
+        pos.divide(count);
+    }
+
+    // if (pos.magnitude() > 0) {
+    //     pos.setMagnitude(max_speed);
+    //     pos.subtract(boid.vel);
+    //     pos.limit(this.maxForce);
+    //   }
+
     return pos;
 }
 
@@ -353,3 +378,5 @@ function update() {
 }
 
 init();
+
+
