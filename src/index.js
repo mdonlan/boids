@@ -17,52 +17,18 @@ let boid_texture;
 
 // controls
 
-/* settings v1
-const num_boids = 200;
-const sight_radius = 200;
-const avoid_radius = 20;
-const separation_factor = 0.05;
-const cohesion_factor = 0.001;
-const alignment_factor = 0.5;
+const num_boids = 350;
+const sight_radius = 75;
+const avoid_radius = 15;
+const separation_factor = 0.005;
+const cohesion_factor = 0.0001;
+const alignment_factor = 0.01;
 const turn_factor = .2;
 const max_speed = 3;
 const min_speed = 2;
-*/
-
-/* settings v2
-const num_boids = 100;
-const sight_radius = 400;
-const avoid_radius = 20;
-const separation_factor = 0.005;
-const cohesion_factor = 0.00005;
-const alignment_factor = 0.5;
-const turn_factor = .2;
-const max_speed = 3;
-const min_speed = 2;
-*/
-
-// const num_boids = 250;
-// const sight_radius = 400;
-// const avoid_radius = 10;
-// const separation_factor = 0.005;
-// const cohesion_factor = 0.00025;
-// const alignment_factor = 0.65;
-// const turn_factor = .2;
-// const max_speed = 3;
-// const min_speed = 2;
-
-const num_boids = 250;
-const sight_radius = 400;
-const avoid_radius = 10;
-const separation_factor = 0.005;
-const cohesion_factor = 0.00025;
-const alignment_factor = 0.65;
-// const turn_factor = .2;
-const max_speed = 3;
-const min_speed = 2;
 
 
-const blocks = [];
+// const blocks = [];
 
 const _CLIENT_BOUNDS = [[0, 0], [window.innerWidth, window.innerHeight]];
 const _CLIENT_DIMENSIONS = [5, 5];
@@ -83,70 +49,49 @@ function get_random_vel() {
 
 function sim() {
     for (let i = 0; i < boids.length; i++) {
-        // const boid = boids[i];
-
-        const nearby = spatial_hash.FindNear(clients[i].position, [400, 400]);
-
-        // const nearby = [];
-        // for (let j = 0; j < boids.length; j++) {
-        //     // if (j <= i) continue;
-        //     const dist = get_dist(boids[i], boids[j]);
-
-        //     if (dist < sight_radius) {
-        //         nearby.push(boids[j]);
-        //     }
-        // }
+        const nearby = spatial_hash.FindNear(clients[i].position, [100, 100]);
 
         const alignment = get_alignment(boids[i], nearby);
         const cohesion = get_cohesion(boids[i], nearby);
         const separation = get_separation(boids[i], nearby);
 
-        const new_vel = { x: boids[i].vel.x, y: boids[i].vel.y};
+        // const new_vel = { x: boids[i].vel.x, y: boids[i].vel.y};
 
-        if (alignment.x != 0 || alignment.y != 0) {
-            new_vel.x += (alignment.x - boids[i].vel.x) * alignment_factor;
-            new_vel.y += (alignment.y - boids[i].vel.y) * alignment_factor;
-        }
+        boids[i].vel.x += separation.x * separation_factor;
+        boids[i].vel.y += separation.y * separation_factor;
 
-        if (cohesion.x != 0 || cohesion.y != 0) {
-            new_vel.x += (cohesion.x - boids[i].pos.x) * cohesion_factor;
-            new_vel.y += (cohesion.y - boids[i].pos.y) * cohesion_factor;
-        }
+        boids[i].vel.x += (alignment.x - boids[i].vel.x) * alignment_factor;
+        boids[i].vel.y += (alignment.y - boids[i].vel.y) * alignment_factor;
 
-        if (separation.x != 0 || separation.y != 0) {
-            new_vel.x += separation.x * separation_factor;
-            new_vel.y += separation.y * separation_factor;
-        }
+        boids[i].vel.x += (cohesion.x - boids[i].pos.x) * cohesion_factor;
+        boids[i].vel.y += (cohesion.y - boids[i].pos.y) * cohesion_factor;
 
-        if (new_vel.x > max_speed) {
-            new_vel.x = max_speed;
-        } else if (new_vel.x < -max_speed) {
-            new_vel.x = -max_speed;
-        }
+        // if (boids[i].x > max_speed) {
+        //     boids[i].x = max_speed;
+        // } else if (boids[i].x < -max_speed) {
+        //     boids[i].x = -max_speed;
+        // }
 
-        if (new_vel.y > max_speed) {
-            new_vel.y = max_speed;
-        } else if (new_vel.y < -max_speed) {
-            new_vel.y = -max_speed;
-        }
-
-        boids[i].vel = new_vel;
-
+        // if (boids[i].y > max_speed) {
+        //     boids[i].y = max_speed;
+        // } else if (boids[i].y < -max_speed) {
+        //     boids[i].y = -max_speed;
+        // }
 
         // turn near edges
-        // const margin = 50;
-        // if (boid.pos.x < margin) {
-        //     boid.vel.x += turn_factor;
-        // }
-        // if (boid.pos.x > WIDTH - margin) {
-        //     boid.vel.x -= turn_factor;
-        // }
-        // if (boid.pos.y > HEIGHT - margin) {
-        //     boid.vel.y -= turn_factor;
-        // }
-        // if (boid.pos.y < margin) {
-        //     boid.vel.y += turn_factor;
-        // }
+        const margin = 50;
+        if (boids[i].pos.x < margin) {
+            boids[i].vel.x += turn_factor;
+        }
+        if (boids[i].pos.x > WIDTH - margin) {
+            boids[i].vel.x -= turn_factor;
+        }
+        if (boids[i].pos.y > HEIGHT - margin) {
+            boids[i].vel.y -= turn_factor;
+        }
+        if (boids[i].pos.y < margin) {
+            boids[i].vel.y += turn_factor;
+        }
 
         const speed = Math.sqrt(boids[i].vel.x * boids[i].vel.x + boids[i].vel.y * boids[i].vel.y);
 
@@ -157,8 +102,6 @@ function sim() {
             boids[i].vel.x = (boids[i].vel.x / speed) * max_speed;
             boids[i].vel.y = (boids[i].vel.y / speed) * max_speed;
         }
-
-        // console.log("vel_x: " + boid.vel.x + ", vel_y: " + boid.vel.y);
 
         const angle = Math.atan2(boids[i].vel.y, boids[i].vel.x);
         
@@ -229,8 +172,8 @@ function get_alignment(boid, nearby) {
     let nearby_count = 0;
     for (let i = 0; i < nearby.length; i++) {
             if (boid.id != nearby[i].id && get_dist(boid, boids[nearby[i].id]) < sight_radius) {
-                vel.x -= boids[nearby[i].id].vel.x;
-                vel.y -= boids[nearby[i].id].vel.y;
+                vel.x += boids[nearby[i].id].vel.x;
+                vel.y += boids[nearby[i].id].vel.y;
                 nearby_count++;
             }
     }
@@ -270,32 +213,15 @@ function get_separation(boid, nearby) {
     const pos = new Vec2(0, 0);
     let count = 0;
     for (let i = 0; i < nearby.length; i++) {
-            if (boid.id != nearby[i].id && get_dist(boid, boids[nearby[i].id]) < avoid_radius) {
-                let vec = new Vec2(boid.pos.x, boid.pos.y);
-                
-                let dist = Vec2.distance(boid.pos, boids[nearby[i].id].pos);
-                let diff = Vec2.subtract(boid.pos, boids[nearby[i].id].pos);
-                diff.normalize();
-                diff.divide(dist);
-
-                pos.add(diff);
-                count++;
-
-
-                // pos.x += boid.pos.x - boids[nearby[i].id].pos.x;
-                // pos.y += boid.pos.y - boids[nearby[i].id].pos.y;
-            }
+        if (boid.id != nearby[i].id && get_dist(boid, boids[nearby[i].id]) < avoid_radius) {
+            pos.x += boid.pos.x - boids[nearby[i].id].pos.x;
+            pos.y += boid.pos.y - boids[nearby[i].id].pos.y;
+        }
     }
 
-    if (count > 0) {
-        pos.divide(count);
-    }
-
-    // if (pos.magnitude() > 0) {
-    //     pos.setMagnitude(max_speed);
-    //     pos.subtract(boid.vel);
-    //     pos.limit(this.maxForce);
-    //   }
+    // if (count > 0) {
+    //     pos.divide(count);
+    // }
 
     return pos;
 }
@@ -372,7 +298,7 @@ function rgb2hex(r, g, b) {
 function update() {
     stats.begin();
     sim();
-    wrap();
+    // wrap();
 	stats.end();
     requestAnimationFrame(update);
 }
