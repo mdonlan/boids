@@ -6,7 +6,9 @@ import { Vec2 } from './Vec2';
 const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
 const app = new PIXI.Application({width: WIDTH, height: HEIGHT, backgroundColor: 0x181818}); // resolution: window.devicePixelRatio || 1
-document.body.appendChild(app.view);
+
+let el = document.querySelector(".boids_container");
+el.appendChild(app.view);
 
 var stats = new Stats();
 stats.showPanel(0);
@@ -17,22 +19,21 @@ let boid_texture;
 
 // controls
 
-const num_boids = 350;
+const num_boids = 500;
 const sight_radius = 75;
-const avoid_radius = 15;
+
 const separation_factor = 0.005;
-const cohesion_factor = 0.0001;
-const alignment_factor = 0.01;
+const cohesion_factor = 0.0002;
+const alignment_factor = 0.02;
 const turn_factor = .2;
 const max_speed = 3;
 const min_speed = 2;
+const boid_size = 10;
+const avoid_radius = boid_size * 1.5;
 
-
-// const blocks = [];
-
-const _CLIENT_BOUNDS = [[0, 0], [window.innerWidth, window.innerHeight]];
-const _CLIENT_DIMENSIONS = [5, 5];
-const spatial_hash = new spatial_grid.SpatialHash_Fast(_CLIENT_BOUNDS, _CLIENT_DIMENSIONS);
+const bounds = [[0, 0], [window.innerWidth, window.innerHeight]];
+const cell_size = [boid_size * 2, boid_size * 2];
+const spatial_hash = new spatial_grid.SpatialHash_Fast(bounds, cell_size);
 const clients = [];
 
 function get_random_pos() {
@@ -45,6 +46,16 @@ function get_random_vel() {
     let x = Math.round(Math.random() * 6) - 3;
     let y = Math.round(Math.random() * 6) - 3;
     return new Vec2(x, y);
+}
+
+function set_boid_color(boid) {
+// set sprite color based on x, y pos -- improve this?
+    const x = boid.pos.x / (WIDTH / 255);
+    const y = boid.pos.y / (WIDTH / 255);
+    const r = x;
+    const g = y;
+    const b = 175;
+    boid.sprite.tint = rgb2hex(r, g, b);
 }
 
 function sim() {
@@ -117,47 +128,41 @@ function sim() {
         boids[i].sprite.x = boids[i].pos.x;
         boids[i].sprite.y = boids[i].pos.y;
 
-        // set sprite color based on x, y pos -- improve this?
-        const x = boids[i].pos.x / (WIDTH / 255);
-        const y = boids[i].pos.y / (WIDTH / 255);
-        const r = x;
-        const g = y;
-        const b = 175;
-        boids[i].sprite.tint = rgb2hex(r, g, b);
+        set_boid_color(boids[i]);
 
-        // DEV: view radius
-        if (i == 0) {
-            let sight_circle = app.stage.getChildByName("sight_circle");
-            let avoid_circle = app.stage.getChildByName("avoid_circle");
+        // // DEV: view radius
+        // if (i == 0) {
+        //     let sight_circle = app.stage.getChildByName("sight_circle");
+        //     let avoid_circle = app.stage.getChildByName("avoid_circle");
 
-            if (sight_circle) {
-                sight_circle.clear();
-                sight_circle.lineStyle(2, 0xFF00FF);
-                sight_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, sight_radius);
-                sight_circle.endFill();
-            } else {
-                const sight_circle = new PIXI.Graphics();
-                sight_circle.lineStyle(2, 0xFF00FF);
-                sight_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, sight_radius);
-                sight_circle.endFill();
-                sight_circle.name = "sight_circle";
-                app.stage.addChild(sight_circle);
-            }
+        //     if (sight_circle) {
+        //         sight_circle.clear();
+        //         sight_circle.lineStyle(2, 0xFF00FF);
+        //         sight_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, sight_radius);
+        //         sight_circle.endFill();
+        //     } else {
+        //         const sight_circle = new PIXI.Graphics();
+        //         sight_circle.lineStyle(2, 0xFF00FF);
+        //         sight_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, sight_radius);
+        //         sight_circle.endFill();
+        //         sight_circle.name = "sight_circle";
+        //         app.stage.addChild(sight_circle);
+        //     }
 
-            if (avoid_circle) {
-                avoid_circle.clear();
-                avoid_circle.lineStyle(2, 0xFF00FF);
-                avoid_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, avoid_radius);
-                avoid_circle.endFill();
-            } else {
-                const avoid_circle = new PIXI.Graphics();
-                avoid_circle.lineStyle(2, 0xFF00FF);
-                avoid_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, avoid_radius);
-                avoid_circle.endFill();
-                avoid_circle.name = "avoid_circle";
-                app.stage.addChild(avoid_circle)
-            }
-        }
+        //     if (avoid_circle) {
+        //         avoid_circle.clear();
+        //         avoid_circle.lineStyle(2, 0xFF00FF);
+        //         avoid_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, avoid_radius);
+        //         avoid_circle.endFill();
+        //     } else {
+        //         const avoid_circle = new PIXI.Graphics();
+        //         avoid_circle.lineStyle(2, 0xFF00FF);
+        //         avoid_circle.drawCircle(boids[i].pos.x, boids[i].pos.y, avoid_radius);
+        //         avoid_circle.endFill();
+        //         avoid_circle.name = "avoid_circle";
+        //         app.stage.addChild(avoid_circle)
+        //     }
+        // }
     }
 }
 
@@ -239,9 +244,18 @@ function wrap() {
 function init() {
     create_boid_texture();
 
-    for (let i = 0; i < num_boids; i++) {
-        create_boid();
-    }
+    const spawn_interval = setInterval(() => {
+        if (boids.length < num_boids) {
+            create_boid();
+        } else {
+            clearInterval(spawn_interval);
+        }
+    }, 20);
+    
+
+    // for (let i = 0; i < num_boids; i++) {
+    //     create_boid();
+    // }
 
     update();
 }
@@ -262,6 +276,9 @@ function create_boid() {
     boid.sprite.y = boid.pos.y;
     boid.sprite.anchor.x = 0.5;
     boid.sprite.anchor.y = 0.5;
+
+    set_boid_color(boid);
+    
     app.stage.addChild(boid.sprite);
 
     boids.push(boid);
@@ -269,7 +286,7 @@ function create_boid() {
 
 function create_boid_texture() {
     let triangle = new PIXI.Graphics();
-    const triangleWidth = 8;
+    const triangleWidth = boid_size;
     const triangleHeight = triangleWidth;
     const triangleHalfway = triangleWidth / 2;
 
