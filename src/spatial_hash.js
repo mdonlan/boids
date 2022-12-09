@@ -1,5 +1,6 @@
-import {math} from './math.js';
+// link to source -- https://github.com/simondevyoutube/Tutorial_SpatialHashGrid_Optimized
 
+import {math} from './math.js';
 
 export const spatial_grid = (() => {
   

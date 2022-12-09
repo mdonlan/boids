@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-import Stats from 'stats.js';
+// import Stats from 'stats.js';
 import {spatial_grid} from './spatial_hash'
 import { Vec2 } from './Vec2';
 
@@ -7,19 +7,61 @@ const WIDTH = window.innerWidth;
 const HEIGHT = window.innerHeight;
 const app = new PIXI.Application({width: WIDTH, height: HEIGHT, backgroundColor: 0x181818}); // resolution: window.devicePixelRatio || 1
 
-let el = document.querySelector(".boids_container");
+const el = document.querySelector(".boids_container");
 el.appendChild(app.view);
 
-var stats = new Stats();
-stats.showPanel(0);
-document.body.appendChild( stats.dom );
+const pause_btn = document.createElement("div");
+pause_btn.innerHTML = "Pause";
+pause_btn.style.position = "absolute";
+// pause_btn.style.width = "120px";
+pause_btn.style.top = "20px";
+pause_btn.style.left = "calc(100% - 150px)";
+pause_btn.style.textAlign = "center";
+pause_btn.style.fontSize = "42px";
+pause_btn.style.color = "rgba(255, 255, 255, 0.1)";
+pause_btn.style.cursor = "pointer";
+pause_btn.style.fontVariant = "small-caps";
+pause_btn.style.zIndex = "1";
+pause_btn.style.transition = "0.2s";
+pause_btn.addEventListener("mouseenter", () => {
+    pause_btn.style.color = "rgba(255, 255, 255, 0.9)";
+});
+pause_btn.addEventListener("mouseleave", () => {
+    pause_btn.style.color = "rgba(255, 255, 255, 0.1)";
+});
+pause_btn.addEventListener("click", () => {
+    is_running = !is_running;
+    if (is_running) {
+        pause_btn.innerHTML = "Pause";
+    } else {
+        pause_btn.innerHTML = "Play";
+    }
+});
+el.appendChild(pause_btn);
+
+// var stats = new Stats();
+// stats.showPanel(0);
+// document.body.appendChild( stats.dom );
 
 const boids = [];
 let boid_texture;
 
 // controls
+let is_running = true;
 
-const num_boids = 500;
+let num_boids = 500;
+
+console.log("WIDTH: " + WIDTH + " HEIGHT: " + HEIGHT);
+if (WIDTH < 450) {
+    num_boids /= 3;
+    num_boids = Math.round(num_boids);
+} else if (WIDTH < 800) {
+    num_boids /= 2;
+    num_boids = Math.round(num_boids);
+}
+
+console.log("Num Boids: " + num_boids);
+
 const sight_radius = 75;
 
 const separation_factor = 0.005;
@@ -51,12 +93,33 @@ function get_random_vel() {
 function set_boid_color(boid) {
 // set sprite color based on x, y pos -- improve this?
     const x = boid.pos.x / (WIDTH / 255);
-    const y = boid.pos.y / (WIDTH / 255);
+    const y = boid.pos.y / (HEIGHT / 255);
     const r = x;
     const g = y;
     const b = 175;
     boid.sprite.tint = rgb2hex(r, g, b);
+
+    // console.log(WIDTH)
+    // console.log(r, g, b);
+    // const h = boid.pos.x / (WIDTH / 255);
+    // const s = 75;
+    // const l = 50;
+    // boid.sprite.tint = hslToHex(h, s, l);
+    // console.log(boid.sprite.tint)
+
+    
 }
+
+function hslToHex(h, s, l) {
+    l /= 100;
+    const a = s * Math.min(l, 1 - l) / 100;
+    const f = n => {
+      const k = (n + h / 30) % 12;
+      const color = l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1);
+      return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
+    };
+    return `0x${f(0)}${f(8)}${f(4)}`;
+  }
 
 function sim() {
     for (let i = 0; i < boids.length; i++) {
@@ -313,10 +376,13 @@ function rgb2hex(r, g, b) {
 }
 
 function update() {
-    stats.begin();
-    sim();
+    if (is_running) {
+        sim();
+    }
+    // stats.begin();
+   
     // wrap();
-	stats.end();
+	// stats.end();
     requestAnimationFrame(update);
 }
 
