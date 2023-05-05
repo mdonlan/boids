@@ -1,5 +1,5 @@
 import * as PIXI from 'pixi.js';
-// import Stats from 'stats.js';
+import Stats from 'stats.js';
 import {spatial_grid} from './spatial_hash'
 import { Vec2 } from './Vec2';
 
@@ -18,7 +18,7 @@ pause_btn.style.top = "20px";
 pause_btn.style.left = "calc(100% - 150px)";
 pause_btn.style.textAlign = "center";
 pause_btn.style.fontSize = "42px";
-pause_btn.style.color = "rgba(255, 255, 255, 0.1)";
+pause_btn.style.color = "rgba(255, 255, 255, 0.3)";
 pause_btn.style.cursor = "pointer";
 pause_btn.style.fontVariant = "small-caps";
 pause_btn.style.zIndex = "1";
@@ -27,7 +27,7 @@ pause_btn.addEventListener("mouseenter", () => {
     pause_btn.style.color = "rgba(255, 255, 255, 0.9)";
 });
 pause_btn.addEventListener("mouseleave", () => {
-    pause_btn.style.color = "rgba(255, 255, 255, 0.1)";
+    pause_btn.style.color = "rgba(255, 255, 255, 0.3)";
 });
 pause_btn.addEventListener("click", () => {
     is_running = !is_running;
@@ -62,11 +62,38 @@ if (WIDTH < 450) {
 
 console.log("Num Boids: " + num_boids);
 
+
+// start old controls
+
+// // settings v1
+// const sight_radius = 200;
+// const avoid_radius = 20;
+// const separation_factor = 0.05;
+// const cohesion_factor = 0.001;
+// const alignment_factor = 0.5;
+
+
+// //settings v2
+// const sight_radius = 400;
+// const avoid_radius = 20;
+// const separation_factor = 0.005;
+// const cohesion_factor = 0.00005;
+// const alignment_factor = 0.5;
+
+// v3
+// const sight_radius = 400;
+// const avoid_radius = 10;
+// const separation_factor = 0.005;
+// const cohesion_factor = 0.00025;
+// const alignment_factor = 0.65;
+
+// end old
+
 const sight_radius = 75;
 
 const separation_factor = 0.005;
-const cohesion_factor = 0.0002;
-const alignment_factor = 0.02;
+const cohesion_factor = 0.00025;
+const alignment_factor = 0.04; // 0.02
 const turn_factor = .2;
 const max_speed = 3;
 const min_speed = 2;
@@ -77,6 +104,7 @@ const bounds = [[0, 0], [window.innerWidth, window.innerHeight]];
 const cell_size = [boid_size * 2, boid_size * 2];
 const spatial_hash = new spatial_grid.SpatialHash_Fast(bounds, cell_size);
 const clients = [];
+
 
 function get_random_pos() {
     let x = Math.round(Math.random() * WIDTH);
@@ -119,26 +147,41 @@ function hslToHex(h, s, l) {
       return Math.round(255 * color).toString(16).padStart(2, '0');   // convert to Hex and prefix "0" if needed
     };
     return `0x${f(0)}${f(8)}${f(4)}`;
-  }
+}
+
+// skip frame lets us skip calculating the new velocity every frame, but still lets us draw the boid moving at its prev velocity so it looks ok
+let skip_frame = true;
 
 function sim() {
+    if (skip_frame) {
+        skip_frame = false;
+        // return;
+    } else if (!skip_frame) {
+        skip_frame = true;
+    }
+
     for (let i = 0; i < boids.length; i++) {
-        const nearby = spatial_hash.FindNear(clients[i].position, [100, 100]);
+        if (!skip_frame) {
+            const nearby = spatial_hash.FindNear(clients[i].position, [100, 100]);
 
-        const alignment = get_alignment(boids[i], nearby);
-        const cohesion = get_cohesion(boids[i], nearby);
-        const separation = get_separation(boids[i], nearby);
+            const alignment = get_alignment(boids[i], nearby);
+            const cohesion = get_cohesion(boids[i], nearby);
+            const separation = get_separation(boids[i], nearby);
 
-        // const new_vel = { x: boids[i].vel.x, y: boids[i].vel.y};
+            // const new_vel = { x: boids[i].vel.x, y: boids[i].vel.y};
 
-        boids[i].vel.x += separation.x * separation_factor;
-        boids[i].vel.y += separation.y * separation_factor;
+            boids[i].vel.x += separation.x * separation_factor;
+            boids[i].vel.y += separation.y * separation_factor;
 
-        boids[i].vel.x += (alignment.x - boids[i].vel.x) * alignment_factor;
-        boids[i].vel.y += (alignment.y - boids[i].vel.y) * alignment_factor;
+            boids[i].vel.x += (alignment.x - boids[i].vel.x) * alignment_factor;
+            boids[i].vel.y += (alignment.y - boids[i].vel.y) * alignment_factor;
 
-        boids[i].vel.x += (cohesion.x - boids[i].pos.x) * cohesion_factor;
-        boids[i].vel.y += (cohesion.y - boids[i].pos.y) * cohesion_factor;
+            if (cohesion.x != 0 || cohesion.y != 0) { // check to make sure there is some cohesion values or else it causes boids to move to top-left when alone
+                boids[i].vel.x += (cohesion.x - boids[i].pos.x) * cohesion_factor;
+                boids[i].vel.y += (cohesion.y - boids[i].pos.y) * cohesion_factor;
+            }
+        }
+        
 
         // if (boids[i].x > max_speed) {
         //     boids[i].x = max_speed;
@@ -267,7 +310,8 @@ function get_cohesion(boid, nearby) {
         }
     }
 
-    if (nearby_count == 0) return pos;
+    // if (nearby_count == 0) return pos;
+    if (nearby_count == 0) return {x: 0, y: 0};
 
     pos.x /= nearby_count;
     pos.y /= nearby_count;
@@ -376,10 +420,12 @@ function rgb2hex(r, g, b) {
 }
 
 function update() {
+    // stats.begin();
+    
     if (is_running) {
         sim();
     }
-    // stats.begin();
+    
    
     // wrap();
 	// stats.end();
